@@ -1,0 +1,16 @@
+version: 2025.1
+units: kg_co2e_per_pkm
+
+factors:
+  default:
+    train: 0.041        # Rail (average UK electricity mix)
+    coach: 0.027        # Long-distance coach or bus
+    car: 0.120          # Private car, avg occupancy ~1.5 people
+    flight:
+      short_haul: 0.255 # Domestic / short-haul flight
+      long_haul: 0.195  # Intercontinental flight
+
+notes: >
+  Starter default values for per-passenger-kilometre emissions (kg CO₂e/pkm).
+  These are placeholders until verified sources (e.g. UK DEFRA, BEIS, IEA) are cited.
+  Contributors should update values and add new country-specific profiles.
