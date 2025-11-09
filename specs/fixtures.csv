@@ -1,0 +1,37 @@
+- **Commit message:** `docs: add data contract`
+- **Why:** Defines exactly what shape your data must be so tools don’t break.
+
+---
+
+### C) Add the **API Spec** (what requests/responses look like)
+- **Filename:** `specs/API_SPEC.md`
+- **Paste:**
+```md
+# API v1 (draft)
+
+Base: /v1 | JSON
+
+POST /estimate
+Request:
+{
+  "home": "West Ham United",
+  "away": "Leeds United",
+  "away_fans": 3000,
+  "mode_share": {"train":0.5,"coach":0.3,"car":0.2}
+}
+Response 200:
+{
+  "data": {
+    "distance_km": 275.31,
+    "per_fan_kg": 17.31,
+    "total_kg": 51930.0,
+    "assumptions": {...}
+  },
+  "meta": {"version":"v1","units":{"distance":"km","emissions":"kg_co2e"}}
+}
+
+POST /estimate-bulk (array or CSV upload later)
+GET /clubs
+GET /factors
+
+Errors: INVALID_INPUT, UNKNOWN_CLUB, OUT_OF_RANGE, INTERNAL_ERROR
