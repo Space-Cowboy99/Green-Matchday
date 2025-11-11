@@ -92,6 +92,12 @@ def main() -> None:
                 )
                 payload = r if isinstance(r, dict) else getattr(r, "__dict__", r)
                 payload.update({"home": home, "away": away, "away_fans": away_fans})
+                
+                ass = (payload.get("assumptions") or {})
+                per_mode = ass.get("per_mode_kg", {})
+                for mode, kg in per_mode.items():
+                    payload[f"{mode}_kg_per_fan"] = kg
+
                 results.append(payload)
 
         if args.out_json:
@@ -104,6 +110,34 @@ def main() -> None:
                 w.writerows(results)
         if not args.out_json and not args.out_csv:
             print(json.dumps(results, indent=2))
+        
+        # ---- summary ----
+        total_kg = sum(p.get("total_kg", 0) for p in results)
+        print("\nSUMMARY:")
+        print(f"  Total emissions across {len(results)} fixtures: {round(total_kg, 1):,} kg CO₂e")
+
+        # optional per-mode share
+        mode_totals = {}
+        for p in results:
+            for k, v in (p.get("assumptions") or {}).get("per_mode_kg", {}).items():
+                mode_totals[k] = mode_totals.get(k, 0) + v * p.get("away_fans", 0)
+
+        for k, v in mode_totals.items():
+            pct = 100 * v / total_kg if total_kg else 0
+            print(f"  {k:<6}: {round(v,1):,} kg ({pct:.1f}%)")
+
+        # ---- per-fixture summaries ----
+        print("\nDETAILED BREAKDOWN BY FIXTURE:")
+        for p in results:
+            home, away = p.get("home"), p.get("away")
+            total = p.get("total_kg", 0)
+            print(f"\n{home} vs {away}")
+            print(f"  Total emissions: {round(total,1):,} kg CO₂e")
+            per_mode = (p.get("assumptions") or {}).get("per_mode_kg", {})
+            for k, v in per_mode.items():
+                pct = 100 * (v * p.get("away_fans", 0)) / total if total else 0
+                print(f"  {k:<6}: {round(v * p.get('away_fans',0),1):,} kg ({pct:.1f}%)")
+
 
 if __name__ == "__main__":
     main()
