@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from .io_csv import write_per_mode_csv
+from .io_json import write_batch_json
+from pathlib import Path
+
 import argparse
 import csv
 import json
@@ -58,6 +62,11 @@ def main() -> None:
             factors_path=str(args.factors),
         )
 
+        # Save results for a single fixture
+        write_per_mode_csv([res], out_dir="out", filename="single.csv")
+        write_batch_json([res], out_dir="out", filename="single.json")
+        print("✅ Saved outputs to 'out/single.csv' and 'out/single.json'")
+
         payload = res if isinstance(res, dict) else getattr(res, "__dict__", res)
 
         if args.out:
@@ -100,16 +109,30 @@ def main() -> None:
 
                 results.append(payload)
 
-        if args.out_json:
-            args.out_json.write_text(json.dumps(results, indent=2))
-        if args.out_csv:
-            fieldnames = sorted({k for d in results for k in d.keys()})
-            with args.out_csv.open("w", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-                w.writeheader()
-                w.writerows(results)
-        if not args.out_json and not args.out_csv:
-            print(json.dumps(results, indent=2))
+                # ---- AFTER the for-loop that builds `results` and the final `results.append(payload)` ----
+
+                # Decide where to write JSON
+                if args.out_json:
+                    json_dir = args.out_json.parent
+                    json_name = args.out_json.name
+                else:
+                    json_dir = Path("out")
+                    json_name = "batch.json"
+
+                # Decide where to write CSV
+                if args.out_csv:
+                    csv_dir = args.out_csv.parent
+                    csv_name = args.out_csv.name
+                else:
+                    csv_dir = Path("out")
+                    csv_name = "batch.csv"
+
+                # Write both files using the helpers
+                write_per_mode_csv(results, out_dir=csv_dir, filename=csv_name)
+                write_batch_json(results, out_dir=json_dir, filename=json_name)
+
+                print(f"✅ Saved: {csv_dir / csv_name}")
+                print(f"✅ Saved: {json_dir / json_name}")
         
         # ---- summary ----
         total_kg = sum(p.get("total_kg", 0) for p in results)
